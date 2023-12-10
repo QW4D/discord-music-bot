@@ -9,8 +9,7 @@ import os
 class music_cog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
-        #all the music related stuff
+
         self.is_playing = False
         self.is_paused = False
         self.loop = False
@@ -28,7 +27,6 @@ class music_cog(commands.Cog):
         self.vc = None
         self.ytdl = YoutubeDL(self.YDL_OPTIONS)
 
-     #searching the item on youtube
     def search_yt(self, item):
         if item.startswith("https://"):
             title = self.ytdl.extract_info(item, download=True)["title"]
@@ -53,13 +51,12 @@ class music_cog(commands.Cog):
                 if os.path.exists("tmp.weba"):
                     os.remove("tmp.weba")
                 self.ytdl.download([m_url])
-            self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable= "ffmpeg.exe", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
+            self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable= "ffmpeg", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
         else:
             self.is_playing = False
             self.current = ""
             await self.leave_timer(600)
 
-    # infinite loop checking 
     async def play_music(self, ctx):
 
         if len(self.music_queue) > 0 or self.loop:
@@ -69,7 +66,6 @@ class music_cog(commands.Cog):
                 m_url = self.current[0]['source']
             else:
                 m_url = self.current[0]['source']
-            #print(2)
             if not self.vc or not self.vc.is_connected():
                 self.vc = await self.current[1].connect()
 
@@ -85,7 +81,9 @@ class music_cog(commands.Cog):
                 if os.path.exists("tmp.weba"):
                     os.remove("tmp.weba")
                 self.ytdl.download([m_url])
-            self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable="ffmpeg.exe", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
+            print(f'[log] playing music')
+            self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable="ffmpeg", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
+            print("[log] now music is playing")
 
         else:
             self.is_playing = False
