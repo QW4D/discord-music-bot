@@ -56,6 +56,8 @@ class music_cog(commands.Cog):
             self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable= "ffmpeg.exe", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
         else:
             self.is_playing = False
+            self.current = ""
+            await self.leave_timer(600)
 
     # infinite loop checking 
     async def play_music(self, ctx):
@@ -88,6 +90,20 @@ class music_cog(commands.Cog):
         else:
             self.is_playing = False
             self.current = ""
+            await self.leave_timer(600)
+
+    async def leave_timer(self, time):
+        timer = 0
+        while True:
+            if not self.is_playing:
+                await asyncio.sleep(1)
+                timer += 1
+                if timer >= time:
+                    await self.vc.disconnect()
+                    return
+            else:
+                return
+
 
     @commands.command(name="play", aliases=["p","P","playing"], help="Играет выбраную песню с youtube.com")
     async def play(self, ctx, *args):
