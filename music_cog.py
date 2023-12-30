@@ -5,7 +5,7 @@ from youtubesearchpython import VideosSearch
 from yt_dlp import YoutubeDL
 import asyncio
 import os
-
+import time
 class music_cog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -27,6 +27,8 @@ class music_cog(commands.Cog):
         self.vc = None
         self.ytdl = YoutubeDL(self.YDL_OPTIONS)
 
+    def log(self, text):
+        print(f'[log] {text}')
     def search_yt(self, item):
         if item.startswith("https://"):
             title = self.ytdl.extract_info(item, download=True)["title"]
@@ -55,7 +57,7 @@ class music_cog(commands.Cog):
         else:
             self.is_playing = False
             self.current = ""
-            await self.leave_timer(600)
+            await self.check_leave()
 
     async def play_music(self, ctx):
 
@@ -81,26 +83,21 @@ class music_cog(commands.Cog):
                 if os.path.exists("tmp.weba"):
                     os.remove("tmp.weba")
                 self.ytdl.download([m_url])
-            print(f'[log] playing music')
+            self.log("playing music")
             self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable="ffmpeg", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
-            print("[log] now music is playing")
 
         else:
             self.is_playing = False
             self.current = ""
-            await self.leave_timer(600)
+            await self.check_leave()
 
-    async def leave_timer(self, time):
-        timer = 0
-        while True:
-            if not self.is_playing:
-                await asyncio.sleep(1)
-                timer += 1
-                if timer >= time:
-                    await self.vc.disconnect()
-                    return
-            else:
-                return
+    async def check_leave(self):
+        # бот выходит, если в войсе никого нет
+        members = self.vc.channel.members
+        self.log(f'voice members: {len(members)}')
+        await asyncio.sleep(10)
+        if len(members) == 1:
+            await self.vc.disconnect()
 
 
     @commands.command(name="play", aliases=["p","P","playing"], help="Играет выбраную песню с youtube.com")
@@ -172,24 +169,26 @@ class music_cog(commands.Cog):
         await ctx.send("```Очередь очищена```")
 
     @commands.command(name="stop", aliases=["disconnect", "l", "d"], help="Кикает бота из голосового канала")
-    async def dc(self, ctx):
+    async def disconnect(self, ctx):
         self.is_playing = False
         self.is_paused = False
         self.loop = False
         self.current = ""
         self.music_queue = []
         os.remove("tmp.weba")
-        await self.vc.disconnect()
+        self.vc.disconnect()
     
     @commands.command(name="remove", help="Убирает последнюю / выбранную песню из очереди")
-    async def re(self, ctx, *args):
+    async def remove(self, ctx, *args):
         self.music_queue.pop(int(args[0])-1)
         await ctx.send(f"пенся удалена")
 
     @commands.command(name="loop", help="залупливает (зацикливает) 1 песню")
-    async def re(self, ctx, *args):
+    async def loop(self, ctx, *args):
         self.loop = not self.loop
         if self.loop:
+            self.log("looping on")
             await ctx.send(f"залупливание включено")
         else:
+            self.log("looping off")
             await ctx.send(f"залупливание выключено")
