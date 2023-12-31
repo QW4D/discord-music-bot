@@ -175,8 +175,7 @@ class music_cog(commands.Cog):
         self.loop = False
         self.current = ""
         self.music_queue = []
-        os.remove("tmp.weba")
-        self.vc.disconnect()
+        await self.vc.disconnect()
     
     @commands.command(name="remove", help="Убирает последнюю / выбранную песню из очереди")
     async def remove(self, ctx, *args):
