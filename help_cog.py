@@ -15,7 +15,7 @@ class help_cog(commands.Cog):
 {self.bot.command_prefix}help - это меню
 {self.bot.command_prefix}q - очередь
 {self.bot.command_prefix}p <песня> - играть песню
-{self.bot.command_prefix}skip - простить песню, которая сейчас играет
+{self.bot.command_prefix}skip - пропустить песню, которая сейчас играет
 {self.bot.command_prefix}clear - очистить очередь
 {self.bot.command_prefix}stop - выйти из голосового чата
 {self.bot.command_prefix}pause - поставить бота на паузу / продолжить

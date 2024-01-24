@@ -113,7 +113,7 @@ class music_cog(commands.Cog):
         else:
             song = self.search_yt(query)
             if type(song) == type(True):
-                await ctx.send("```Невозможно скачать пенсю. Некорректный формат. Возможно это прямая трансляция или плейлист```")
+                await ctx.send("```Невозможно скачать песню. Некорректный формат. Возможно это прямая трансляция или плейлист```")
             else:
                 if self.is_playing:
                     await ctx.send(f"**{len(self.music_queue) + 1} ' {song['title']}'** добавлена в очередь")
