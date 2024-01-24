@@ -5,3 +5,4 @@ yt-dlp
 youtube-search-python
 discord.py
 discord
+aioconsole

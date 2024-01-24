@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import os
+import aioconsole
 class help_cog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -15,7 +16,7 @@ class help_cog(commands.Cog):
 {self.bot.command_prefix}help - это меню
 {self.bot.command_prefix}q - очередь
 {self.bot.command_prefix}p <песня> - играть песню
-{self.bot.command_prefix}skip - простить песню, которая сейчас играет
+{self.bot.command_prefix}skip - пропустить песню, которая сейчас играет
 {self.bot.command_prefix}clear - очистить очередь
 {self.bot.command_prefix}stop - выйти из голосового чата
 {self.bot.command_prefix}pause - поставить бота на паузу / продолжить
@@ -33,3 +34,6 @@ class help_cog(commands.Cog):
     @commands.command(name="help", help="Выводит все команды")
     async def help(self, ctx):
         await ctx.send(self.help_message)
+
+
+

@@ -48,11 +48,14 @@ class music_cog(commands.Cog):
 
             if not self.loop or not os.path.exists("tmp.weba"):
                 loop = asyncio.get_event_loop()
+                print("data")
                 data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(m_url, download=False))
+                print("data1")
                 song = data['url']
                 if os.path.exists("tmp.weba"):
                     os.remove("tmp.weba")
                 self.ytdl.download([m_url])
+            print("ZZZ")
             self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable= "ffmpeg", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
         else:
             self.is_playing = False
@@ -110,18 +113,17 @@ class music_cog(commands.Cog):
             return
         if self.is_paused:
             self.vc.resume()
+        song = self.search_yt(query)
+        if isinstance(song, bool):
+            await ctx.send("```Невозможно скачать песню. Некорректный формат. Возможно это прямая трансляция или плейлист```")
         else:
-            song = self.search_yt(query)
-            if type(song) == type(True):
-                await ctx.send("```Невозможно скачать пенсю. Некорректный формат. Возможно это прямая трансляция или плейлист```")
+            if self.is_playing:
+                await ctx.send(f"**{len(self.music_queue) + 1} ' {song['title']}'** добавлена в очередь")
             else:
-                if self.is_playing:
-                    await ctx.send(f"**{len(self.music_queue) + 1} ' {song['title']}'** добавлена в очередь")
-                else:
-                    await ctx.send(f"**'{song['title']}'** добавлена в очередь")
-                self.music_queue.append([song, voice_channel])
-                if not self.is_playing:
-                    await self.play_music(ctx)
+                await ctx.send(f"**'{song['title']}'** добавлена в очередь")
+            self.music_queue.append([song, voice_channel])
+            if not self.is_playing:
+                await self.play_music(ctx)
 
     @commands.command(name="pause", help="Ставит / снимает с паузы песню, которая сейчас играет")
     async def pause(self, ctx, *args):
