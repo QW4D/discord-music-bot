@@ -102,6 +102,11 @@ class music_cog(commands.Cog):
 
     @commands.command(name="play", aliases=["p","P","playing"], help="Играет выбраную песню с youtube.com")
     async def play(self, ctx, *args):
+        roles = ctx.author.roles
+        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
+        if role in roles:
+            await ctx.send("вы не имеете права ставить музыку")
+            return
         query = " ".join(args)
         try:
             voice_channel = ctx.author.voice.channel
@@ -125,6 +130,11 @@ class music_cog(commands.Cog):
 
     @commands.command(name="pause", help="Ставит / снимает с паузы песню, которая сейчас играет")
     async def pause(self, ctx, *args):
+        roles = ctx.author.roles
+        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
+        if role in roles:
+            await ctx.send("вы не имеете права ставить музыку на паузу")
+            return
         if self.is_playing:
             self.is_playing = False
             self.is_paused = True
@@ -137,6 +147,11 @@ class music_cog(commands.Cog):
 
     @commands.command(name="skip", aliases=["s"], help="пропускает песню, которая сейчас играет")
     async def skip(self, ctx):
+        roles = ctx.author.roles
+        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
+        if role in roles:
+            await ctx.send("вы не имеете права пропускать музыку")
+            return
         if self.vc:
             self.vc.stop()
             await self.play_next()
@@ -163,6 +178,11 @@ class music_cog(commands.Cog):
 
     @commands.command(name="clear", aliases=["c", "bin"], help="Останавливает музыку и очищает очередь")
     async def clear(self, ctx):
+        roles = ctx.author.roles
+        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
+        if role in roles:
+            await ctx.send("вы не имеете права очищать очередь")
+            return
         if self.vc != None and self.is_playing:
             self.vc.stop()
         self.music_queue = []
@@ -170,6 +190,11 @@ class music_cog(commands.Cog):
 
     @commands.command(name="stop", aliases=["disconnect", "l", "d"], help="Кикает бота из голосового канала")
     async def disconnect(self, ctx):
+        roles = ctx.author.roles
+        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
+        if role in roles:
+            await ctx.send("вы не имеете права останавливать бота")
+            return
         self.is_playing = False
         self.is_paused = False
         self.loop = False
@@ -179,11 +204,21 @@ class music_cog(commands.Cog):
     
     @commands.command(name="remove", help="Убирает последнюю / выбранную песню из очереди")
     async def remove(self, ctx, *args):
+        roles = ctx.author.roles
+        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
+        if role in roles:
+            await ctx.send("вы не имеете права удалять музыку")
+            return
         self.music_queue.pop(int(args[0])-1)
         await ctx.send(f"пенся удалена")
 
     @commands.command(name="loop", help="залупливает (зацикливает) 1 песню")
     async def loop(self, ctx, *args):
+        roles = ctx.author.roles
+        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
+        if role in roles:
+            await ctx.send("вы не имеете права залупливать музыку")
+            return
         self.loop = not self.loop
         if self.loop:
             self.log("looping on")
