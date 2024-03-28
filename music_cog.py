@@ -5,7 +5,8 @@ from youtubesearchpython import VideosSearch
 from yt_dlp import YoutubeDL
 import asyncio
 import os
-import time
+import aiohttp
+import aiofile
 class music_cog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -18,9 +19,9 @@ class music_cog(commands.Cog):
         # 2d array containing [song, channel]
         self.music_queue = []
         self.YDL_OPTIONS = {'format': 'bestaudio/best',
-                            'reconnect': '1',
-                            'reconnect_streamed': '1',
-                            'reconnect_delay_max': '5',
+                            'reconnect': 1,
+                            'reconnect_streamed': 1,
+                            'reconnect_delay_max': 5,
                             'outtmpl': 'tmp.weba'}
         self.FFMPEG_OPTIONS = {'options': '-vn'}
 
@@ -50,9 +51,10 @@ class music_cog(commands.Cog):
                 loop = asyncio.get_event_loop()
                 data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(m_url, download=False))
                 song = data['url']
+                self.log(f'url:{song}')
                 if os.path.exists("tmp.weba"):
                     os.remove("tmp.weba")
-                self.ytdl.download([m_url])
+                await self.download_file(song)
             self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable= "ffmpeg", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
         else:
             self.is_playing = False
@@ -78,11 +80,11 @@ class music_cog(commands.Cog):
                 await self.vc.move_to(self.current[1])
             if not self.loop or not os.path.exists("tmp.weba"):
                 loop = asyncio.get_event_loop()
-                data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(m_url, download=False))
-                song = data['url']
                 if os.path.exists("tmp.weba"):
                     os.remove("tmp.weba")
-                self.ytdl.download([m_url])
+                await loop.run_in_executor(None, lambda: self.ytdl.download(m_url))
+                self.log(m_url)
+
             self.log("playing music")
             self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable="ffmpeg", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
 
@@ -99,14 +101,8 @@ class music_cog(commands.Cog):
         if len(members) == 1:
             await self.vc.disconnect()
 
-
     @commands.command(name="play", aliases=["p","P","playing"], help="Играет выбраную песню с youtube.com")
     async def play(self, ctx, *args):
-        roles = ctx.author.roles
-        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
-        if role in roles:
-            await ctx.send("вы не имеете права ставить музыку")
-            return
         query = " ".join(args)
         try:
             voice_channel = ctx.author.voice.channel
@@ -130,11 +126,6 @@ class music_cog(commands.Cog):
 
     @commands.command(name="pause", help="Ставит / снимает с паузы песню, которая сейчас играет")
     async def pause(self, ctx, *args):
-        roles = ctx.author.roles
-        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
-        if role in roles:
-            await ctx.send("вы не имеете права ставить музыку на паузу")
-            return
         if self.is_playing:
             self.is_playing = False
             self.is_paused = True
@@ -147,11 +138,6 @@ class music_cog(commands.Cog):
 
     @commands.command(name="skip", aliases=["s"], help="пропускает песню, которая сейчас играет")
     async def skip(self, ctx):
-        roles = ctx.author.roles
-        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
-        if role in roles:
-            await ctx.send("вы не имеете права пропускать музыку")
-            return
         if self.vc:
             self.vc.stop()
             await self.play_next()
@@ -178,11 +164,6 @@ class music_cog(commands.Cog):
 
     @commands.command(name="clear", aliases=["c", "bin"], help="Останавливает музыку и очищает очередь")
     async def clear(self, ctx):
-        roles = ctx.author.roles
-        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
-        if role in roles:
-            await ctx.send("вы не имеете права очищать очередь")
-            return
         if self.vc != None and self.is_playing:
             self.vc.stop()
         self.music_queue = []
@@ -190,11 +171,6 @@ class music_cog(commands.Cog):
 
     @commands.command(name="stop", aliases=["disconnect", "l", "d"], help="Кикает бота из голосового канала")
     async def disconnect(self, ctx):
-        roles = ctx.author.roles
-        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
-        if role in roles:
-            await ctx.send("вы не имеете права останавливать бота")
-            return
         self.is_playing = False
         self.is_paused = False
         self.loop = False
@@ -204,21 +180,11 @@ class music_cog(commands.Cog):
     
     @commands.command(name="remove", help="Убирает последнюю / выбранную песню из очереди")
     async def remove(self, ctx, *args):
-        roles = ctx.author.roles
-        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
-        if role in roles:
-            await ctx.send("вы не имеете права удалять музыку")
-            return
         self.music_queue.pop(int(args[0])-1)
         await ctx.send(f"пенся удалена")
 
     @commands.command(name="loop", help="залупливает (зацикливает) 1 песню")
     async def loop(self, ctx, *args):
-        roles = ctx.author.roles
-        role = discord.utils.get(ctx.guild.roles, name="DJDAUN")
-        if role in roles:
-            await ctx.send("вы не имеете права залупливать музыку")
-            return
         self.loop = not self.loop
         if self.loop:
             self.log("looping on")
