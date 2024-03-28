@@ -13,6 +13,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 bot.remove_command('help')
 
+
 async def main():
     async with bot:
         await bot.add_cog(help_cog(bot))

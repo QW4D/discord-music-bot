@@ -5,8 +5,7 @@ from youtubesearchpython import VideosSearch
 from yt_dlp import YoutubeDL
 import asyncio
 import os
-import aiohttp
-import aiofile
+
 class music_cog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -28,8 +27,10 @@ class music_cog(commands.Cog):
         self.vc = None
         self.ytdl = YoutubeDL(self.YDL_OPTIONS)
 
-    def log(self, text):
+    @staticmethod
+    def log(text):
         print(f'[log] {text}')
+
     def search_yt(self, item):
         if item.startswith("https://"):
             title = self.ytdl.extract_info(item, download=True)["title"]
@@ -41,67 +42,64 @@ class music_cog(commands.Cog):
     async def play_next(self):
         if len(self.music_queue) > 0 or self.loop:
             self.is_playing = True
-            if not self.loop or not self.current:
-                self.current = self.music_queue.pop(0)
-                m_url = self.current[0]['source']
-            else:
-                m_url = self.current[0]['source']
 
-            if not self.loop or not os.path.exists("tmp.weba"):
-                loop = asyncio.get_event_loop()
-                data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(m_url, download=False))
-                song = data['url']
-                self.log(f'url:{song}')
-                if os.path.exists("tmp.weba"):
-                    os.remove("tmp.weba")
-                await self.download_file(song)
-            self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable= "ffmpeg", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
+            m_url = await self.get_song()
+            await self.play_song(m_url)
+            await self.check_leave()
         else:
             self.is_playing = False
             self.current = ""
-            await self.check_leave()
 
     async def play_music(self, ctx):
 
         if len(self.music_queue) > 0 or self.loop:
             self.is_playing = True
-            if not self.loop or not self.current:
-                self.current = self.music_queue.pop(0)
-                m_url = self.current[0]['source']
-            else:
-                m_url = self.current[0]['source']
-            if not self.vc or not self.vc.is_connected():
-                self.vc = await self.current[1].connect()
 
-                if not self.vc:
-                    await ctx.send("```Не могу присоединиться к голосовому каналу```")
-                    return
-            else:
-                await self.vc.move_to(self.current[1])
-            if not self.loop or not os.path.exists("tmp.weba"):
-                loop = asyncio.get_event_loop()
-                if os.path.exists("tmp.weba"):
-                    os.remove("tmp.weba")
-                await loop.run_in_executor(None, lambda: self.ytdl.download(m_url))
-                self.log(m_url)
-
-            self.log("playing music")
-            self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable="ffmpeg", **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
-
+            m_url = await self.get_song()
+            await self.connect_vc(ctx)
+            await self.play_song(m_url)
+            await self.check_leave()
         else:
             self.is_playing = False
             self.current = ""
-            await self.check_leave()
+    async def get_song(self):
+        if not self.loop or not self.current:
+            self.current = self.music_queue.pop(0)
+            m_url = self.current[0]['source']
+        else:
+            m_url = self.current[0]['source']
+        return m_url
+
+    async def play_song(self, m_url):
+        if not self.loop or not os.path.exists("tmp.weba"):
+            loop = asyncio.get_event_loop()
+            if os.path.exists("tmp.weba"):
+                os.remove("tmp.weba")
+            await loop.run_in_executor(None, lambda: self.ytdl.download(m_url))
+            self.log(m_url)
+
+        self.log("playing music")
+        self.vc.play(discord.FFmpegPCMAudio("tmp.weba", executable="ffmpeg", **self.FFMPEG_OPTIONS),
+                     after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
+
+    async def connect_vc(self, ctx):
+        if not self.vc or not self.vc.is_connected():
+            self.vc = await self.current[1].connect()
+
+            if not self.vc:
+                await ctx.send("```Не могу присоединиться к голосовому каналу```")
+                return
+        else:
+            await self.vc.move_to(self.current[1])
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        await self.check_leave()
 
     async def check_leave(self):
-        # бот выходит, если в войсе никого нет
-        members = self.vc.channel.members
-        self.log(f'voice members: {len(members)}')
-        await asyncio.sleep(10)
-        if len(members) == 1:
+        if len(self.vc.channel.members) == 1:
             await self.vc.disconnect()
 
-    @commands.command(name="play", aliases=["p","P","playing"], help="Играет выбраную песню с youtube.com")
+    @commands.command(name="play", aliases=["p","P","playing"], help="Играет выбраную песню с youtube")
     async def play(self, ctx, *args):
         query = " ".join(args)
         try:
