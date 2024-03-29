@@ -3,3 +3,4 @@ mytoken.py
 __pycache__
 .idea
 venv
+test_cog.py
