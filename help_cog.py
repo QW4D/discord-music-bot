@@ -13,14 +13,13 @@ class HelpCog(commands.Cog):
 Команды :
 ```
 {self.bot.command_prefix}help - это меню
-{self.bot.command_prefix}q - очередь
+{self.bot.command_prefix}queue (q) - очередь
 {self.bot.command_prefix}p <песня> - играть песню
 {self.bot.command_prefix}skip - пропустить песню, которая сейчас играет
-{self.bot.command_prefix}clear - очистить очередь
-{self.bot.command_prefix}stop - выйти из голосового чата
+{self.bot.command_prefix}clear (c, bin) - очистить очередь
+{self.bot.command_prefix}stop (disconnect, l, d)- выйти из голосового чата
 {self.bot.command_prefix}pause - поставить бота на паузу / продолжить
-{self.bot.command_prefix}remove - убирает последнюю песню в очереди
-{self.bot.command_prefix}remove <номер> - убирает песню в очереди с выбранным номером 
+{self.bot.command_prefix}remove (r) <номер> - убирает песню в очереди с выбранным номером 
 {self.bot.command_prefix}loop - залупливает (зацикливает) песню, которая сейчас играет
 ```
 """

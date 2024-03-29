@@ -33,7 +33,7 @@ class MusicCog(commands.Cog):
         return{'source': search.result()["result"][0]["link"], 'title': search.result()["result"][0]["title"]}
 
     async def play_next(self, vcid):
-        if len(self.music_queue[vcid]) > 0 or self.loop[vcid]:
+        if len(self.channel[vcid].music_queue) > 0 or self.channel[vcid].loop:
             self.channel[vcid].is_playing = True
 
             m_url = await self.get_song(vcid)
@@ -121,7 +121,7 @@ class MusicCog(commands.Cog):
                 await ctx.send("```Невозможно скачать песню. Некорректный формат. Возможно это прямая трансляция или плейлист```")
             else:
                 if self.channel[vcid].is_playing:
-                    await ctx.send(f"**{len(self.music_queue) + 1} ' {song['title']}'** добавлена в очередь")
+                    await ctx.send(f"**{len(self.channel[vcid].music_queue) + 1} ' {song['title']}'** добавлена в очередь")
                 else:
                     await ctx.send(f"**'{song['title']}'** добавлена в очередь")
                 self.channel[vcid].music_queue.append([song, voice_channel])
@@ -144,7 +144,8 @@ class MusicCog(commands.Cog):
     async def skip(self, ctx):
         vcid = ctx.author.voice.channel.id
         if self.channel[vcid].vc:
-            self.channel[vcid].vc[vcid].stop()
+            self.channel[vcid].vc.stop()
+            await asyncio.sleep(0.5)
             await self.play_next(vcid)
 
     @commands.command(name="queue", aliases=["q"], help="Выводит песню, которая сейчас играет и очередь")
@@ -154,14 +155,12 @@ class MusicCog(commands.Cog):
             await ctx.send(f"```Нет музыки в очереди```")
 
         retval = ""
-        if self.loop:
+        if self.channel[vcid].loop:
             retval += f"сейчас зациклена: {self.channel[vcid].current[0]['title']} \n"
-            for i in range(0, len(self.channel[vcid].music_queue)):
-                retval += f"#{i + 1} - " + self.channel[vcid].music_queue[i][0]['title'] + "\n"
         else:
             retval += f"сейчас играет: {self.channel[vcid].current[0]['title']} \n"
-            for i in range(0, len(self.channel[vcid].music_queue)):
-                retval += f"#{i + 1} - " + self.channel[vcid].music_queue[i][0]['title'] + "\n"
+        for i in range(0, len(self.channel[vcid].music_queue)):
+            retval += f"#{i + 1} - " + self.channel[vcid].music_queue[i][0]['title'] + "\n"
         if retval != "":
             await ctx.send(f"```Очередь:\n{retval}```")
 
@@ -170,6 +169,10 @@ class MusicCog(commands.Cog):
         vcid = ctx.author.voice.channel.id
         if self.channel[vcid].vc is not None and self.channel[vcid].is_playing:
             self.channel[vcid].vc.stop()
+        self.channel[vcid].is_playing = False
+        self.channel[vcid].is_paused = False
+        self.channel[vcid].loop = False
+        self.channel[vcid].current = ""
         self.channel[vcid].music_queue = []
         await ctx.send("```Очередь очищена```")
 
@@ -183,25 +186,27 @@ class MusicCog(commands.Cog):
         self.channel[vcid].music_queue = []
         await self.channel[vcid].vc.disconnect()
     
-    @commands.command(name="remove", help="Убирает последнюю / выбранную песню из очереди")
+    @commands.command(name="remove", aliases=["r"], help="Убирает выбранную песню из очереди")
     async def remove(self, ctx, *args):
         vcid = ctx.author.voice.channel.id
-        self.channel[vcid].music_queue.pop(int(args[0])-1)
+        if args[0]:
+            self.channel[vcid].music_queue.pop(int(args[0])-1)
         await ctx.send(f"пенся удалена")
 
     @commands.command(name="loop", help="залупливает (зацикливает) 1 песню")
     async def loop(self, ctx):
+        self.log(123)
         vcid = ctx.author.voice.channel.id
         self.channel[vcid].loop = not self.channel[vcid].loop
         if self.channel[vcid].loop:
             self.log("looping on")
-            await ctx.send(f"залупливание включено")
+            await ctx.send("залупливание включено")
         else:
             self.log("looping off")
-            await ctx.send(f"залупливание выключено")
+            await ctx.send("залупливание выключено")
 
     @commands.command(name="id", help="id")
-    async def loop(self, ctx):
+    async def id(self, ctx):
         vcid = ctx.author.voice.channel.id
         await ctx.send(vcid)
 
