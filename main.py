@@ -6,7 +6,6 @@ import mytoken
 
 from help_cog import HelpCog
 from music_cog import MusicCog
-from test_cog import test_cog
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents)
