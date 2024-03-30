@@ -33,6 +33,9 @@ class MusicCog(commands.Cog):
         return{'source': search.result()["result"][0]["link"], 'title': search.result()["result"][0]["title"]}
 
     async def play_next(self, vcid):
+        self.log("play_next")
+        await asyncio.sleep(0.5)
+        self.channel[vcid].vc.stop()
         if len(self.channel[vcid].music_queue) > 0 or self.channel[vcid].loop:
             self.channel[vcid].is_playing = True
 
@@ -67,8 +70,11 @@ class MusicCog(commands.Cog):
             await self.download_song(m_url, vcid)
 
         self.log("playing music")
+        #loop.run_until_complete(self.channel[vcid].vc.play(discord.FFmpegPCMAudio(f"tmp/{vcid}.weba", executable="ffmpeg", **self.FFMPEG_OPTIONS)))
+        #await self.play_next(vcid)
         self.channel[vcid].vc.play(discord.FFmpegPCMAudio(f"tmp/{vcid}.weba", executable="ffmpeg", **self.FFMPEG_OPTIONS),
-                                   after=lambda: asyncio.run_coroutine_threadsafe(self.play_next(vcid), self.bot.loop))
+                                   after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(vcid), self.bot.loop))
+
 
     async def download_song(self, m_url, vcid):
         loop = asyncio.get_event_loop()
@@ -145,7 +151,6 @@ class MusicCog(commands.Cog):
         vcid = ctx.author.voice.channel.id
         if self.channel[vcid].vc:
             self.channel[vcid].vc.stop()
-            await asyncio.sleep(0.5)
             await self.play_next(vcid)
 
     @commands.command(name="queue", aliases=["q"], help="Выводит песню, которая сейчас играет и очередь")
