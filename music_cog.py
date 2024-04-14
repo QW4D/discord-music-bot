@@ -103,9 +103,8 @@ class MusicCog(commands.Cog):
         await self.check_leave(vcid)
 
     async def check_leave(self, vcid):
-        #if len(self.channel[vcid].vc.channel.members) == 1:
-        #    await self.channel[vcid].vc.disconnect()
-        #  ВРЕМЕННО!!!
+        if len(self.channel[vcid].vc.channel.members) == 1:
+            await self.channel[vcid].vc.disconnect()
         pass
 
     @commands.command(name="play", aliases=["p", "P", "playing"], help="Играет выбраную песню с youtube")
