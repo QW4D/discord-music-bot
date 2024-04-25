@@ -104,7 +104,7 @@ class MusicCog(commands.Cog):
 
     async def check_leave(self, vcid):
         if len(self.channel[vcid].vc.channel.members) == 1:
-            await self.channel[vcid].vc.disconnect()
+            await self.stop(vcid)
         pass
 
     @commands.command(name="play", aliases=["p", "P", "playing"], help="Играет выбраную песню с youtube")
@@ -183,6 +183,9 @@ class MusicCog(commands.Cog):
     @commands.command(name="stop", aliases=["disconnect", "l", "d"], help="Кикает бота из голосового канала")
     async def disconnect(self, ctx):
         vcid = ctx.author.voice.channel.id
+        await self.stop(vcid)
+
+    async def stop(self, vcid):
         self.channel[vcid].is_playing = False
         self.channel[vcid].is_paused = False
         self.channel[vcid].loop = False
@@ -208,12 +211,6 @@ class MusicCog(commands.Cog):
         else:
             self.log("looping off")
             await ctx.send("залупливание выключено")
-
-    @commands.command(name="id", help="id")
-    async def id(self, ctx):
-        vcid = ctx.author.voice.channel.id
-        await ctx.send(vcid)
-
 
 class Channel:
     def __init__(self):
