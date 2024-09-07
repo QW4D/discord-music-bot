@@ -5,7 +5,7 @@ from youtubesearchpython import VideosSearch
 from yt_dlp import YoutubeDL
 import asyncio
 import os
-
+from pytube import Playlist
 
 class MusicCog(commands.Cog):
     def __init__(self, bot):
@@ -29,11 +29,11 @@ class MusicCog(commands.Cog):
             title = self.ytdl.extract_info(item, download=False)["title"]
             return{'source': item, 'title': title}
         search = VideosSearch(item, limit=1)
-        print(search.result()["result"][0]["title"], search.result()["result"][0]["link"])
+        self.log(search.result()["result"][0]["title"], search.result()["result"][0]["link"])
         return{'source': search.result()["result"][0]["link"], 'title': search.result()["result"][0]["title"]}
 
     async def play_next(self, vcid):
-        self.log("play_next")
+        self.log("playing next song")
         await asyncio.sleep(0.5)
         self.channel[vcid].vc.stop()
         if len(self.channel[vcid].music_queue) > 0 or self.channel[vcid].loop:
@@ -69,7 +69,7 @@ class MusicCog(commands.Cog):
         if not self.channel[vcid].loop or not os.path.exists(f"tmp/{vcid}.weba"):
             await self.download_song(m_url, vcid)
 
-        self.log("playing music")
+        self.log("playing song")
         #loop.run_until_complete(self.channel[vcid].vc.play(discord.FFmpegPCMAudio(f"tmp/{vcid}.weba", executable="ffmpeg", **self.FFMPEG_OPTIONS)))
         #await self.play_next(vcid)
         self.channel[vcid].vc.play(discord.FFmpegPCMAudio(f"tmp/{vcid}.weba", executable="ffmpeg", **self.FFMPEG_OPTIONS),
@@ -84,7 +84,7 @@ class MusicCog(commands.Cog):
         opts["outtmpl"] = f"tmp/{vcid}.weba"
         ytdl = YoutubeDL(opts)
         await loop.run_in_executor(None, lambda: ytdl.download(m_url))
-        self.log(m_url)
+        self.log(f'song url: {m_url}')
 
     async def connect_vc(self, ctx):
         vcid = ctx.author.voice.channel.id
@@ -111,6 +111,7 @@ class MusicCog(commands.Cog):
     async def play(self, ctx, *args):
         vcid = ctx.author.voice.channel.id
         query = " ".join(args)
+        self.log(f'{ctx.author.name}: {query}')
         if vcid not in self.channel:
             self.channel[vcid] = Channel()
         try:
@@ -133,6 +134,45 @@ class MusicCog(commands.Cog):
                 if not self.channel[vcid].is_playing:
                     await self.play_music(ctx)
 
+    @commands.command(name="playlist", aliases=["pl", "Pl", "PL"], help="Играет плейлист с youtube")
+    async def playlist(self, ctx, link, count=10):
+        vcid = ctx.author.voice.channel.id
+        try:
+            playlist = Playlist(link)
+        except Exception as err:
+            self.log(f'ERROR: {err}')
+            return
+        self.log(f'playing playlist "{playlist.title}"')
+
+        if vcid not in self.channel:
+            self.channel[vcid] = Channel()
+        try:
+            voice_channel = ctx.author.voice.channel
+        except:
+            await ctx.send("```Сначала ты должен присоедениться к голосовому каналу!```")
+            return
+        if self.channel[vcid].is_paused:
+            self.channel[vcid].vc.resume()
+        else:
+            if self.channel[vcid].is_playing:
+                await ctx.send(
+                    f"**{len(self.channel[vcid].music_queue) + 1} ' {playlist.title}'** добавлен в очередь")
+            else:
+                await ctx.send(f"**'{playlist.title}'** добавлена в очередь")
+            try:
+                i = 0
+                for url in playlist:
+                    if i < count:
+                        song = self.search_yt(url)
+                        self.channel[vcid].music_queue.append([song, ctx.author.voice.channel])
+                        i += 1
+                        continue
+                    break
+            except Exception as err:
+                self.log(f'ERROR: {err}')
+                return
+            if not self.channel[vcid].is_playing:
+                await self.play_music(ctx)
     @commands.command(name="pause", help="Ставит / снимает с паузы песню, которая сейчас играет")
     async def pause(self, ctx):
         vcid = ctx.author.voice.channel.id
@@ -202,7 +242,6 @@ class MusicCog(commands.Cog):
 
     @commands.command(name="loop", help="залупливает (зацикливает) 1 песню")
     async def loop(self, ctx):
-        self.log(123)
         vcid = ctx.author.voice.channel.id
         self.channel[vcid].loop = not self.channel[vcid].loop
         if self.channel[vcid].loop:
