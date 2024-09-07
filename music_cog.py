@@ -158,7 +158,7 @@ class MusicCog(commands.Cog):
                 await ctx.send(
                     f"**{len(self.channel[vcid].music_queue) + 1} ' {playlist.title}'** добавлен в очередь")
             else:
-                await ctx.send(f"**'{playlist.title}'** добавлена в очередь")
+                await ctx.send(f"плейлист **'{playlist.title}'** добавлен в очередь")
             try:
                 i = 0
                 for url in playlist:
