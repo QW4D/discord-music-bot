@@ -28,9 +28,11 @@ class MusicCog(commands.Cog):
         if item.startswith("https://"):
             title = self.ytdl.extract_info(item, download=False)["title"]
             return{'source': item, 'title': title}
-        search = VideosSearch(item, limit=1)
-        self.log(search.result()["result"][0]["title"], search.result()["result"][0]["link"])
-        return{'source': search.result()["result"][0]["link"], 'title': search.result()["result"][0]["title"]}
+        search = VideosSearch(item, limit=1).result()["result"][0]
+        title = search['title']
+        link = search['link']
+        self.log(f'{title}: {link}')
+        return {'source': link, 'title': title}
 
     async def play_next(self, vcid):
         self.log("playing next song")
